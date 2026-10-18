@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger Japan — Expense Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #F7F8FC;
+    --paper-raised: #FFFFFF;
+    --ink: #1F2430;
+    --ink-muted: #808697;
+    --rule: #EAECF1;
+    --rule-strong: #DBDEE7;
+    --navy: #374151;
+    --teal: #14A97C;
+    --teal-deep: #0E8A64;
+    --teal-soft: #E7F9F2;
+    --clay: #F04B4B;
+    --clay-soft: #FEECEC;
+    --amber: #8B5CF6;
+    --amber-soft: #F1ECFE;
+    --shadow: 0 1px 2px rgba(31,29,60,0.04), 0 4px 16px rgba(31,29,60,0.06);
+    --shadow-lift: 0 8px 24px rgba(31,29,60,0.10);
+    --radius: 16px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1000px 420px at 12% -8%, rgba(139,92,246,0.06), transparent 60%),
+      radial-gradient(900px 380px at 100% 0%, rgba(20,169,124,0.07), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+
+  ::selection{ background:var(--amber-soft); }
+
+  /* ---------- Header ---------- */
+  header{
+    padding:28px 24px 18px;
+    max-width:1080px;
+    margin:0 auto;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand-mark{
+    width:34px;height:34px;
+    border-radius:10px;
+    background:linear-gradient(135deg, var(--amber), var(--teal));
+    display:inline-flex;
+    align-items:center;justify-content:center;
+    color:#fff;
+    
+    font-weight:600;
+    font-size:15px;
+    transform:translateY(3px);
+  }
+  .brand h1{
+    
+    font-optical-sizing:auto;
+    font-weight:800;
+    font-size:30px;
+    margin:0;
+    letter-spacing:-0.02em;
+  }
+  .brand span.sub{
+    display:block;
+    
+    font-size:11.5px;
+    letter-spacing:0.08em;
+    color:var(--ink-muted);
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  .nav-select-wrap{
+    position:relative;
+  }
+  select, .field select{
+    
+    appearance:none;
+    -webkit-appearance:none;
+    background:var(--paper-raised);
+    border:1px solid var(--rule-strong);
+    border-radius:10px;
+    padding:10px 38px 10px 14px;
+    font-size:14.5px;
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow:none;
+  }
+  select:focus, .field select:focus, input:focus, button:focus-visible{
+    outline:2px solid var(--teal);
+    outline-offset:1px;
+  }
+  .nav-select-wrap::after, .field.select-field::after{
+    content:"";
+    position:absolute;
+    right:14px; top:50%;
+    width:8px;height:8px;
+    border-right:2px solid var(--ink-muted);
+    border-bottom:2px solid var(--ink-muted);
+    transform:translateY(-65%) rotate(45deg);
+    pointer-events:none;
+  }
+  #viewSelect{ min-width:200px; font-weight:500; }
+
+  /* ---------- Layout ---------- */
+  main{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  .workspace-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .ws-tab{
+    font-family:inherit;
+    background:var(--paper-raised);
+    border:1px solid var(--rule-strong);
+    color:var(--ink-muted);
+    padding:9px 18px;
+    border-radius:999px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    transition:background .12s ease, color .12s ease, border-color .12s ease, transform .12s ease;
+  }
+  .ws-tab:hover{ border-color:var(--teal); color:var(--ink); }
+  .ws-tab.active{
+    background:linear-gradient(135deg, var(--amber), var(--teal));
+    border-color:transparent;
+    color:#fff;
+  }
+  .ws-tab.active:hover{ transform:translateY(-1px); }
+
+  /* ---------- Balance / stat cards ---------- */
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:22px;
+  }
+  @media (max-width:720px){ .stat-row{ grid-template-columns:repeat(2,1fr); } }
+  .stat{
+    position:relative;
+    background:var(--paper-raised);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:20px 20px 18px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    transition:transform .16s ease, box-shadow .16s ease;
+  }
+  .stat:hover{ transform:translateY(-2px); box-shadow:var(--shadow-lift); }
+  .stat::before{
+    content:"";
+    position:absolute; left:0; top:0; right:0; height:3px;
+    background:var(--rule-strong);
+  }
+  .stat.income::before{ background:linear-gradient(90deg, var(--teal), var(--teal-soft)); }
+  .stat.expense::before{ background:linear-gradient(90deg, var(--clay), var(--clay-soft)); }
+  .stat.owed::before{ background:linear-gradient(90deg, var(--amber), var(--amber-soft)); }
+  .stat:first-child::before{ background:linear-gradient(90deg, var(--amber), var(--teal)); }
+  .stat .k{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-muted);
+    font-weight:700;
+  }
+  .stat .v{
+    font-size:27px;
+    font-weight:800;
+    margin-top:7px;
+    letter-spacing:-0.02em;
+    color:var(--ink);
+  }
+  .stat .v.negative{ color:var(--clay); }
+  .stat.income .v{ color:var(--teal); }
+  .stat.expense .v{ color:var(--clay); }
+  .stat.owed .v{ color:var(--amber); }
+
+  /* ---------- Panels ---------- */
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:24px 26px;
+    margin-bottom:22px;
+  }
+  .panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .panel-head h2{
+    
+    font-size:20px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .eyebrow{
+    
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+    margin:0 0 4px;
+  }
+
+  .btn{
+    
+    background:linear-gradient(135deg, var(--teal), var(--teal-deep));
+    color:#fff;
+    border:none;
+    padding:11px 20px;
+    border-radius:12px;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(14,138,100,0.28);
+    transition:transform .14s ease, box-shadow .14s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,138,100,0.34); }
+  .btn:active{ transform:translateY(0) scale(0.98); }
+  .btn.ghost{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--rule-strong);
+    box-shadow:none;
+  }
+  .btn.ghost:hover{ background:var(--teal-soft); transform:none; box-shadow:none; }
+  .btn.small{ padding:6px 12px; font-size:13px; border-radius:8px; }
+  .btn.danger{ background:linear-gradient(135deg, var(--clay), #C23B3B); box-shadow:0 2px 8px rgba(240,75,75,0.28); }
+  .btn.danger:hover{ box-shadow:0 6px 16px rgba(240,75,75,0.34); }
+
+  /* Dashboard grid */
+  .dash-grid{
+    display:grid;
+    grid-template-columns:1.1fr 1.4fr;
+    gap:20px;
+  }
+  @media (max-width:760px){ .dash-grid{ grid-template-columns:1fr; } }
+  .chart-wrap{ position:relative; height:260px; }
+  .legend-list{ list-style:none; margin:14px 0 0; padding:0; }
+  .legend-list li{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 0;
+    border-top:1px solid var(--rule);
+    font-size:14px;
+  }
+  .legend-list li:first-child{ border-top:none; }
+  .chip{ width:12px;height:12px;border-radius:4px; display:inline-block; margin-right:9px; }
+  .legend-name{ display:flex; align-items:center; color:var(--ink); font-weight:500; }
+  .legend-val{ color:var(--ink-muted); font-weight:600; }
+
+  /* Forms */
+  .field{ display:flex; flex-direction:column; gap:6px; position:relative; }
+  .field label{
+    
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+  }
+  .field input{
+    
+    border:1px solid var(--rule-strong);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:14.5px;
+    background:var(--paper-raised);
+    color:var(--ink);
+  }
+  .form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+  }
+  @media (max-width:520px){ .form-grid{ grid-template-columns:1fr; } }
+  .form-actions{
+    display:flex; justify-content:flex-end; gap:10px; margin-top:18px;
+  }
+
+  /* Modal */
+  .modal-backdrop{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(22,50,79,0.42);
+    align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal{
+    background:var(--paper-raised);
+    border-radius:var(--radius);
+    padding:26px 26px 22px;
+    max-width:480px;
+    width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);
+    max-height:88vh;
+    overflow-y:auto;
+  }
+  .modal h3{
+    
+    font-size:21px;
+    margin:0 0 16px;
+  }
+
+  /* Transactions list */
+  .filters{
+    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;
+  }
+  .txn-list{ list-style:none; margin:0; padding:0; }
+  .txn-row{
+    display:grid;
+    grid-template-columns:44px 1fr auto auto;
+    align-items:center;
+    gap:14px;
+    padding:12px 4px;
+    border-top:1px solid var(--rule);
+  }
+  .txn-row:first-child{ border-top:none; }
+  .txn-table tr.txn-row{ display:table-row; padding:0; border-top:none; }
+  .txn-table .txn-icon{ width:26px; height:26px; font-size:13px; border-radius:7px; flex-shrink:0; }
+  .txn-icon{
+    width:38px;height:38px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+  }
+  .txn-icon.income{ background:var(--teal-soft); color:var(--teal); }
+  .txn-icon.expense{ background:var(--clay-soft); color:var(--clay); }
+  .txn-icon.borrowed{ background:var(--amber-soft); color:var(--amber); }
+  .txn-main .desc{ font-weight:500; font-size:14.5px; }
+  .txn-main .meta{ font-size:11.5px; color:var(--ink-muted); margin-top:2px; }
+  .txn-amt{ font-weight:600; font-size:15px; white-space:nowrap; }
+  .txn-amt.income{ color:var(--teal); }
+  .txn-amt.expense{ color:var(--clay); }
+  .txn-amt.borrowed{ color:var(--amber); }
+  .txn-actions{ display:flex; gap:6px; }
+  .icon-btn{
+    background:none;border:1px solid var(--rule-strong); border-radius:8px;
+    width:30px;height:30px; cursor:pointer; color:var(--ink-muted);
+    display:flex;align-items:center;justify-content:center; font-size:13px;
+  }
+  .icon-btn:hover{ background:var(--paper); color:var(--ink); }
+
+  .empty-state{
+    text-align:center; padding:36px 10px; color:var(--ink-muted);
+  }
+  .empty-state .stamp{
+    
+    font-size:12px; letter-spacing:0.1em; text-transform:uppercase;
+    border:1.5px solid var(--rule-strong); border-radius:8px;
+    padding:6px 14px; display:inline-block; margin-bottom:10px;
+  }
+
+  /* Calendar */
+  .cal-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+  }
+  .cal-dow{
+    
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--ink-muted); text-align:center; padding-bottom:4px;
+  }
+  .cal-day{
+    aspect-ratio:1/0.85;
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding:8px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    cursor:pointer;
+    background:var(--paper-raised);
+    transition:transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .cal-day:hover{ border-color:var(--teal); transform:translateY(-1px); box-shadow:var(--shadow); }
+  .cal-day.empty{ background:transparent; border-color:transparent; cursor:default; box-shadow:none; }
+  .cal-day.empty:hover{ transform:none; }
+  .cal-day.today{ border-color:var(--teal); background:var(--teal-soft); }
+  .cal-day.today .cal-daynum{ color:var(--teal-deep); font-weight:800; }
+  .cal-daynum{ font-size:12px; color:var(--ink-muted); font-weight:600; }
+  .cal-day .net{
+    font-size:10.5px;
+    margin-top:2px;
+    padding:3px 7px;
+    border-radius:999px;
+    display:inline-block;
+    font-weight:700;
+  }
+  .cal-day .net.pos{ color:var(--teal-deep); background:#FFFFFF; border:1px solid var(--teal); }
+  .cal-day .net.neg{ color:var(--clay); background:#FFFFFF; border:1px solid var(--clay); }
+
+  /* Table */
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    text-align:right;
+    
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--ink-muted);
+    padding:0 8px 10px;
+    border-bottom:1.5px solid var(--rule-strong);
+  }
+  thead th:first-child{ text-align:left; }
+  tbody td{
+    padding:11px 8px;
+    text-align:right;
+    
+    font-size:14px;
+    border-bottom:1px solid var(--rule);
+  }
+  tbody td:first-child{ text-align:left; font-size:15px; }
+  tbody tr:last-child td{ border-bottom:none; }
+  td.pos{ color:var(--teal); }
+  td.neg{ color:var(--clay); }
+
+  .hidden{ display:none !important; }
+
+  /* Receipts */
+  .receipt-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .receipt-thumb{
+    width:64px; height:64px; border-radius:10px; object-fit:cover;
+    border:1px solid var(--rule-strong); cursor:pointer; background:var(--bg);
+  }
+  .txn-receipt{
+    width:26px; height:26px; border-radius:7px; object-fit:cover;
+    border:1px solid var(--rule-strong); cursor:pointer; flex-shrink:0;
+  }
+  .receipt-pick{ cursor:pointer; display:inline-block; }
+  #lightboxImg{ max-width:100%; max-height:72vh; border-radius:12px; display:block; margin:0 auto; }
+  .backup-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+  /* Repayment tracking */
+  #repaymentSection{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px solid var(--rule);
+  }
+  .repay-summary{
+    font-size:13.5px;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .repay-summary .remaining{ color:var(--amber); }
+  .repay-bar{
+    height:7px;
+    background:var(--rule);
+    border-radius:999px;
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+  .repay-bar-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--teal), var(--teal-deep));
+    border-radius:999px;
+  }
+  .repay-list{ list-style:none; margin:0 0 12px; padding:0; max-height:140px; overflow-y:auto; }
+  .repay-list li{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 0;
+    border-top:1px solid var(--rule);
+    font-size:13.5px;
+  }
+  .repay-list li:first-child{ border-top:none; }
+  .repay-list .icon-btn{ width:26px; height:26px; font-size:11px; }
+  .repay-empty{ font-size:13px; color:var(--ink-muted); padding:6px 0; }
+  .repay-add-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .repay-add-row input{
+    border:1px solid var(--rule-strong);
+    border-radius:9px;
+    padding:9px 11px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--paper-raised);
+  }
+  .repay-add-row input[type="number"]{ flex:1; min-width:100px; }
+  .repay-add-row input[type="date"]{ flex:1; min-width:140px; }
+
+  /* Table wrap (transactions + summary) */
+  .table-wrap{ overflow-x:auto; }
+  .txn-table th, .txn-table td{ text-align:left; }
+  .txn-table th:nth-child(5), .txn-table td:nth-child(5){ text-align:right; }
+  .txn-table th:last-child, .txn-table td:last-child{ text-align:right; width:70px; }
+  .txn-table td.amt{ font-weight:800; white-space:nowrap; }
+  .txn-table td.amt.income{ color:var(--teal); }
+  .txn-table td.amt.expense{ color:var(--clay); }
+  .txn-table td.amt.borrowed{ color:var(--amber); }
+  .txn-table tbody tr:hover{ background:#FBFBFE; }
+  .txn-table .desc-cell{ display:flex; align-items:center; gap:10px; font-weight:600; }
+  .txn-table .actions-cell{ display:flex; gap:6px; justify-content:flex-end; }
+  .cat-badge{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .repay-tag{
+    font-size:11px;
+    font-weight:700;
+    color:var(--teal-deep);
+    margin-top:3px;
+  }
+  .repay-tag.paid{ color:var(--ink-muted); }
+
+  /* Settings */
+  .settings-list{ list-style:none; margin:0 0 16px; padding:0; }
+  .settings-row{
+    display:flex; align-items:center; gap:8px;
+    padding:8px 0;
+    border-top:1px solid var(--rule);
+  }
+  .settings-row:first-child{ border-top:none; }
+  .settings-input{
+    flex:1;
+    border:1px solid var(--rule-strong);
+    border-radius:9px;
+    padding:8px 11px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--paper-raised);
+  }
+  .add-item-form{
+    display:flex; gap:8px; margin-top:4px;
+  }
+  .add-item-form input{
+    flex:1;
+    border:1px solid var(--rule-strong);
+    border-radius:9px;
+    padding:9px 12px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--paper-raised);
+  }
+
+  footer{
+    max-width:1080px; margin:30px auto 0; padding:0 24px;
+    
+    font-size:11.5px; color:var(--ink-muted);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-mark">$</span>
+    <div>
+      <h1>Ledger Japan</h1>
+      <span class="sub">Japan cash journal</span>
+    </div>
+  </div>
+  <div class="nav-select-wrap">
+    <select id="viewSelect">
+      <option value="dashboard">Dashboard</option>
+      <option value="calendar">Calendar</option>
+      <option value="transactions">Transactions</option>
+      <option value="summary">Monthly Summary</option>
+      <option value="settings">Settings</option>
+    </select>
+  </div>
+</header>
+
+<div id="storageWarning" class="hidden" style="max-width:1080px; margin:0 auto 16px; padding:14px 18px; background:var(--clay-soft); border:1px solid var(--clay); border-radius:12px; color:#8a2f26; font-size:13.5px; font-weight:600;">
+  ⚠️ This browser tab can't save data permanently right now (storage is blocked or unavailable). Anything you add will disappear on refresh. This usually means you're viewing this inside a preview/sandboxed panel rather than the real published page, or your browser is set to block site storage — try opening the actual published URL in a normal browser tab.
+</div>
+
+<main>
+
+  <!-- Workspace tabs -->
+  <div class="workspace-tabs" id="workspaceTabs"></div>
+
+  <!-- Balance / stats -->
+  <section class="stat-row">
+    <div class="stat"><div class="k">Cash on hand</div><div class="v" id="balanceAmount">$0.00</div></div>
+    <div class="stat income"><div class="k">Total income</div><div class="v" id="statIncome">$0.00</div></div>
+    <div class="stat expense"><div class="k">Total expenses</div><div class="v" id="statExpense">$0.00</div></div>
+    <div class="stat owed"><div class="k">Owed to others</div><div class="v" id="statOwed">$0.00</div></div>
+  </section>
+  <div id="todayLabel" style="font-size:13px; color:var(--ink-muted); margin:-10px 0 4px;"></div>
+  <div id="currencyNote" style="font-size:12px; color:var(--ink-muted); margin:0 0 18px;"></div>
+
+  <div style="display:flex; justify-content:flex-end; margin-bottom:18px;">
+    <button class="btn" id="openAddBtn">+ Add transaction</button>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="view-dashboard" class="view">
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-head"><h2>By category</h2></div>
+        <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+        <ul class="legend-list" id="categoryLegend"></ul>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Income vs. expenses</h2></div>
+        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR VIEW -->
+  <div id="view-calendar" class="view hidden">
+    <div class="panel">
+      <div class="cal-head">
+        <h2 style="font-size:20px; margin:0;" id="calMonthLabel"></h2>
+        <div style="display:flex; gap:10px;">
+          <div class="nav-select-wrap"><select id="calMonthSelect"></select></div>
+          <div class="nav-select-wrap"><select id="calYearSelect"></select></div>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS VIEW -->
+  <div id="view-transactions" class="view hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>All transactions</h2></div>
+      <div class="filters">
+        <div class="nav-select-wrap"><select id="filterType">
+          <option value="all">All types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+          <option value="borrowed">Borrowed</option>
+        </select></div>
+        <div class="nav-select-wrap"><select id="filterCategory">
+          <option value="all">All categories</option>
+        </select></div>
+        <div class="nav-select-wrap"><select id="filterPayment">
+          <option value="all">All payment methods</option>
+        </select></div>
+      </div>
+      <div class="table-wrap">
+        <table class="txn-table">
+          <thead>
+            <tr><th>Date</th><th>Description</th><th>Category / Lender</th><th>Payment</th><th>Amount</th><th></th></tr>
+          </thead>
+          <tbody id="txnList"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY VIEW -->
+  <div id="view-summary" class="view hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>Monthly summary</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Month</th><th>Income</th><th>Expenses</th><th>Borrowed</th><th>Net</th></tr>
+          </thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="view-settings" class="view hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>Currency</h2></div>
+      <p style="font-size:13px; color:var(--ink-muted); margin:-6px 0 16px;">Set your home currency. New transactions default to this — handy to switch while travelling, then switch back once you're home. Past transactions keep whatever currency they were logged in.</p>
+      <div class="nav-select-wrap" style="display:inline-block;">
+        <select id="homeCurrencySelect"></select>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Workspaces</h2></div>
+      <p style="font-size:13px; color:var(--ink-muted); margin:-6px 0 16px;">Separate your tracking into workspaces, e.g. Personal and Business. Renaming updates any past transactions too. You need at least one.</p>
+      <ul class="settings-list" id="workspaceSettingsList"></ul>
+      <form id="addWorkspaceForm" class="add-item-form">
+        <input type="text" id="newWorkspaceInput" placeholder="New workspace name" required>
+        <button type="submit" class="btn small">Add</button>
+      </form>
+    </div>
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-head"><h2>Categories</h2></div>
+        <p style="font-size:13px; color:var(--ink-muted); margin:-6px 0 16px;">Rename, remove, or add expense categories. Renaming updates any past transactions too.</p>
+        <ul class="settings-list" id="categorySettingsList"></ul>
+        <form id="addCategoryForm" class="add-item-form">
+          <input type="text" id="newCategoryInput" placeholder="New category name" required>
+          <button type="submit" class="btn small">Add</button>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Payment methods</h2></div>
+        <p style="font-size:13px; color:var(--ink-muted); margin:-6px 0 16px;">Rename, remove, or add payment methods, e.g. Card 1, Card 2, Cash.</p>
+        <ul class="settings-list" id="paymentSettingsList"></ul>
+        <form id="addPaymentForm" class="add-item-form">
+          <input type="text" id="newPaymentInput" placeholder="New payment method" required>
+          <button type="submit" class="btn small">Add</button>
+        </form>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Backup &amp; restore</h2></div>
+      <p style="font-size:13px; color:var(--ink-muted); margin:-6px 0 16px;">Your data (including receipt photos) is stored in this browser only. Download a backup file now and then — if you ever clear your browser data or switch devices, you can restore from it here.</p>
+      <div class="backup-actions">
+        <button type="button" class="btn" id="exportBtn">Download backup</button>
+        <label class="btn ghost" for="importFile" style="cursor:pointer;">Restore from backup…</label>
+        <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <span>Data is saved automatically in this browser.</span>
+  <span id="txnCountLabel"></span>
+</footer>
+
+<!-- Add/Edit Transaction Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Add transaction</h3>
+    <form id="txnForm">
+      <input type="hidden" id="editId">
+      <div class="form-grid">
+        <div class="field select-field">
+          <label for="workspaceInput">Workspace</label>
+          <select id="workspaceInput" required></select>
+        </div>
+        <div class="field select-field">
+          <label for="typeInput">Type</label>
+          <select id="typeInput" required>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+            <option value="borrowed">Borrowed money</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top:14px;">
+        <div class="field">
+          <label for="amountInput">Amount</label>
+          <input type="number" id="amountInput" step="0.01" min="0.01" placeholder="0.00" required>
+        </div>
+        <div class="field select-field">
+          <label for="currencyInput">Currency</label>
+          <select id="currencyInput" required></select>
+        </div>
+        <div class="field">
+          <label for="dateInput">Date</label>
+          <input type="date" id="dateInput" required>
+        </div>
+        <div class="field" id="categoryField">
+          <label for="categoryInput">Category</label>
+          <select id="categoryInput"></select>
+        </div>
+        <div class="field hidden" id="lenderField">
+          <label for="lenderInput">Borrowed from (who you owe)</label>
+          <input type="text" id="lenderInput" placeholder="e.g. Mom, Alex, Bank">
+        </div>
+        <div class="field">
+          <label for="paymentInput">Payment method</label>
+          <select id="paymentInput"></select>
+        </div>
+      </div>
+
+      <div class="hidden" id="repaymentSection">
+        <div class="repay-summary" id="repaySummary"></div>
+        <ul class="repay-list" id="repaymentsList"></ul>
+        <div class="repay-add-row">
+          <input type="number" id="repayAmountInput" step="0.01" min="0.01" placeholder="Amount">
+          <input type="date" id="repayDateInput">
+          <button type="button" class="btn small" id="addRepaymentBtn">Log repayment</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label for="descInput">Description</label>
+        <input type="text" id="descInput" placeholder="e.g. Ramen in Shinjuku" required>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label>Receipt (optional)</label>
+        <div class="receipt-row">
+          <img id="receiptPreview" class="receipt-thumb hidden" alt="Receipt preview">
+          <label class="btn ghost small receipt-pick" for="receiptFile" id="receiptPickLabel">📷 Add photo</label>
+          <input type="file" id="receiptFile" accept="image/*" class="hidden">
+          <button type="button" class="btn ghost small hidden" id="receiptRemoveBtn">Remove</button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn" id="saveBtn">Save transaction</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Receipt viewer -->
+<div class="modal-backdrop" id="lightbox" style="z-index:70;">
+  <div class="modal" style="max-width:760px;">
+    <img id="lightboxImg" alt="Receipt">
+    <div class="form-actions">
+      <button type="button" class="btn ghost" id="lightboxClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Day Detail Modal -->
+<div class="modal-backdrop" id="dayModalBackdrop">
+  <div class="modal">
+    <h3 id="dayModalTitle">Day</h3>
+    <ul class="txn-list" id="dayTxnList"></ul>
+    <div class="form-actions">
+      <button type="button" class="btn ghost" id="dayCloseBtn">Close</button>
+      <button type="button" class="btn" id="dayAddBtn">+ Add for this day</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  const DEFAULT_CATEGORIES = ['Food','Rent','Utilities','Entertainment','Other'];
+  const DEFAULT_PAYMENT_METHODS = ['Cash','Card 1','Card 2','Card 3','Bank Transfer','Other'];
+  const DEFAULT_WORKSPACES = ['Personal','House','Car'];
+  const CURRENCIES = [
+    {code:'AUD', symbol:'$', label:'AUD — Australian Dollar'},
+    {code:'USD', symbol:'$', label:'USD — US Dollar'},
+    {code:'EUR', symbol:'€', label:'EUR — Euro'},
+    {code:'GBP', symbol:'£', label:'GBP — British Pound'},
+    {code:'NZD', symbol:'$', label:'NZD — New Zealand Dollar'},
+    {code:'JPY', symbol:'¥', label:'JPY — Japanese Yen'},
+    {code:'CAD', symbol:'$', label:'CAD — Canadian Dollar'},
+    {code:'SGD', symbol:'$', label:'SGD — Singapore Dollar'},
+    {code:'THB', symbol:'฿', label:'THB — Thai Baht'},
+    {code:'IDR', symbol:'Rp', label:'IDR — Indonesian Rupiah'}
+  ];
+  const PASTEL_PALETTE = ['#8FE3C0','#9FC7FA','#C9B6FA','#FFAFC0','#FFD9A6','#B7E8FF','#F6C6E0','#D3E89C'];
+
+  let categories = [...DEFAULT_CATEGORIES];
+  let paymentMethods = [...DEFAULT_PAYMENT_METHODS];
+  let workspaces = [...DEFAULT_WORKSPACES];
+  let currentWorkspace = DEFAULT_WORKSPACES[0];
+  let homeCurrency = 'JPY';
+
+  function currencyMeta(code){
+    return CURRENCIES.find(c=>c.code===code) || CURRENCIES[0];
+  }
+
+  function getCategoryColor(name){
+    const idx = categories.indexOf(name);
+    if(idx > -1) return PASTEL_PALETTE[idx % PASTEL_PALETTE.length];
+    let hash = 0;
+    for(let i=0;i<name.length;i++){ hash = name.charCodeAt(i) + ((hash<<5)-hash); }
+    return PASTEL_PALETTE[Math.abs(hash) % PASTEL_PALETTE.length];
+  }
+  function darken(hex, amt){
+    const n = parseInt(hex.slice(1),16);
+    const r = Math.max(0, (n>>16) - amt);
+    const g = Math.max(0, ((n>>8)&0xFF) - amt);
+    const b = Math.max(0, (n&0xFF) - amt);
+    return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+  }
+
+  let transactions = [];
+  let categoryChart, trendChart;
+  let calDate = new Date();
+  let dayModalTargetDate = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  // Persists data in the browser itself (works on GitHub Pages and any real website).
+  // Falls back to an in-memory store only if localStorage is unavailable (e.g. private
+  // browsing with storage blocked), so the app still works for the current session.
+  const memoryFallback = {};
+  const storage = {
+    async get(key){
+      try{
+        const raw = localStorage.getItem('ledger-japan:' + key);
+        return raw === null ? null : { value: raw };
+      }catch(e){
+        return Object.prototype.hasOwnProperty.call(memoryFallback, key) ? { value: memoryFallback[key] } : null;
+      }
+    },
+    async set(key, value){
+      try{
+        localStorage.setItem('ledger-japan:' + key, value);
+      }catch(e){
+        memoryFallback[key] = value;
+      }
+      return { value };
+    }
+  };
+
+  const decimalsFor = (code) => (code==='JPY' || code==='IDR') ? 0 : 2;
+  const fmt = (n) => { const d = decimalsFor(homeCurrency); return currencyMeta(homeCurrency).symbol + Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d, maximumFractionDigits:d}); };
+  function fmtCur(n, code){
+    const meta = currencyMeta(code || homeCurrency);
+    const d = decimalsFor(meta.code);
+    const numStr = Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d, maximumFractionDigits:d});
+    if(!code || code===homeCurrency) return meta.symbol + numStr;
+    return meta.symbol + numStr + ' ' + meta.code;
+  }
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const uid = () => 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
+  // ---------- Storage ----------
+  async function loadSettings(){
+    try{
+      const catRes = await storage.get('categories');
+      categories = catRes && catRes.value ? JSON.parse(catRes.value) : [...DEFAULT_CATEGORIES];
+    }catch(e){ categories = [...DEFAULT_CATEGORIES]; }
+    try{
+      const payRes = await storage.get('paymentMethods');
+      paymentMethods = payRes && payRes.value ? JSON.parse(payRes.value) : [...DEFAULT_PAYMENT_METHODS];
+    }catch(e){ paymentMethods = [...DEFAULT_PAYMENT_METHODS]; }
+    try{
+      const wsRes = await storage.get('workspaces');
+      workspaces = wsRes && wsRes.value ? JSON.parse(wsRes.value) : [...DEFAULT_WORKSPACES];
+    }catch(e){ workspaces = [...DEFAULT_WORKSPACES]; }
+    try{
+      const curRes = await storage.get('currentWorkspace');
+      currentWorkspace = curRes && curRes.value && workspaces.includes(curRes.value) ? curRes.value : workspaces[0];
+    }catch(e){ currentWorkspace = workspaces[0]; }
+    try{
+      const curCyRes = await storage.get('homeCurrency');
+      homeCurrency = curCyRes && curCyRes.value && CURRENCIES.some(c=>c.code===curCyRes.value) ? curCyRes.value : 'JPY';
+    }catch(e){ homeCurrency = 'JPY'; }
+  }
+  async function saveSettings(){
+    try{
+      await storage.set('categories', JSON.stringify(categories));
+      await storage.set('paymentMethods', JSON.stringify(paymentMethods));
+      await storage.set('workspaces', JSON.stringify(workspaces));
+    }catch(e){ /* storage unavailable — app still works this session */ }
+  }
+  async function saveCurrentWorkspace(){
+    try{ await storage.set('currentWorkspace', currentWorkspace); }
+    catch(e){ /* storage unavailable — app still works this session */ }
+  }
+  async function saveHomeCurrency(){
+    try{ await storage.set('homeCurrency', homeCurrency); }
+    catch(e){ /* storage unavailable — app still works this session */ }
+  }
+
+  async function loadTransactions(){
+    try{
+      const res = await storage.get('transactions');
+      transactions = res && res.value ? JSON.parse(res.value) : seedData();
+      if(!res || !res.value){ await saveTransactions(); }
+    }catch(e){
+      transactions = seedData();
+    }
+  }
+
+  async function saveTransactions(){
+    try{
+      await storage.set('transactions', JSON.stringify(transactions));
+    }catch(e){ /* storage unavailable — app still works this session */ }
+  }
+
+  function seedData(){
+    return [];
+  }
+
+  // ---------- Derived data ----------
+  function repaidTotal(t){
+    return (t.repayments || []).reduce((sum,r)=> sum + r.amount, 0);
+  }
+  function remainingOwed(t){
+    return t.amount - repaidTotal(t);
+  }
+
+  function wsTransactions(){
+    return transactions.filter(t=> (t.workspace||workspaces[0]) === currentWorkspace);
+  }
+
+  function totals(){
+    let income=0, expense=0, owedGross=0, repaid=0;
+    wsTransactions().forEach(t=>{
+      if(t.type==='income') income += t.amount;
+      else if(t.type==='expense') expense += t.amount;
+      else if(t.type==='borrowed'){ owedGross += t.amount; repaid += repaidTotal(t); }
+    });
+    const owed = owedGross - repaid;
+    return {income, expense, owed, balance: income + owed - expense};
+  }
+
+  function categoryTotals(){
+    const out = {};
+    wsTransactions().filter(t=>t.type==='expense').forEach(t=>{
+      const c = t.category || 'Other';
+      out[c] = (out[c]||0) + t.amount;
+    });
+    return out;
+  }
+
+  function monthKey(dateStr){ return dateStr.slice(0,7); } // YYYY-MM
+
+  function monthlyTotals(){
+    const map = {};
+    wsTransactions().forEach(t=>{
+      const k = monthKey(t.date);
+      if(!map[k]) map[k] = {income:0, expense:0, borrowed:0};
+      if(t.type==='income') map[k].income += t.amount;
+      else if(t.type==='expense') map[k].expense += t.amount;
+      else if(t.type==='borrowed') map[k].borrowed += t.amount;
+    });
+    return map;
+  }
+
+  // ---------- Rendering ----------
+  function renderAll(){
+    renderWorkspaceTabs();
+    renderBalance();
+    renderCategoryChart();
+    renderTrendChart();
+    renderTransactionList();
+    renderCalendar();
+    renderSummary();
+    renderCategorySettings();
+    renderPaymentSettings();
+    renderWorkspaceSettings();
+    const count = wsTransactions().length;
+    $('txnCountLabel').textContent = count + ' transaction' + (count===1?'':'s') + ' logged in ' + currentWorkspace;
+  }
+
+  function renderBalance(){
+    const t = totals();
+    const el = $('balanceAmount');
+    el.textContent = (t.balance<0?'-':'') + fmt(t.balance);
+    el.classList.toggle('negative', t.balance<0);
+    $('statIncome').textContent = fmt(t.income);
+    $('statExpense').textContent = fmt(t.expense);
+    $('statOwed').textContent = fmt(t.owed);
+
+    const hasForeign = wsTransactions().some(tx => tx.currency && tx.currency !== homeCurrency);
+    $('currencyNote').textContent = hasForeign
+      ? `Totals are shown in ${homeCurrency} and don't convert other currencies — foreign-currency amounts are listed as-is in the transactions table.`
+      : '';
+  }
+
+  function renderCategoryChart(){
+    const data = categoryTotals();
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+    const colors = labels.map(l => getCategoryColor(l));
+
+    const ctx = $('categoryChart').getContext('2d');
+    if(categoryChart) categoryChart.destroy();
+
+    if(labels.length===0){
+      $('categoryLegend').innerHTML = '<li style="border:none; justify-content:center; color:var(--ink-muted);">No expenses logged yet</li>';
+      return;
+    }
+
+    categoryChart = new Chart(ctx, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderColor:'#FFFFFF', borderWidth:3, hoverOffset:6 }] },
+      options:{
+        maintainAspectRatio:false,
+        cutout:'66%',
+        plugins:{ legend:{ display:false } }
+      }
+    });
+
+    const total = values.reduce((a,b)=>a+b,0);
+    $('categoryLegend').innerHTML = labels.map((l,i)=>{
+      const pct = total ? Math.round(values[i]/total*100) : 0;
+      return `<li><span class="legend-name"><span class="chip" style="background:${colors[i]}"></span>${l}</span><span class="legend-val">${fmt(values[i])} · ${pct}%</span></li>`;
+    }).join('');
+  }
+
+  function lastNMonths(n){
+    const out = [];
+    const d = new Date();
+    d.setDate(1);
+    for(let i=n-1;i>=0;i--){
+      const x = new Date(d.getFullYear(), d.getMonth()-i, 1);
+      out.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'));
+    }
+    return out;
+  }
+
+  function renderTrendChart(){
+    const months = lastNMonths(6);
+    const mt = monthlyTotals();
+    const labels = months.map(m=>{
+      const [y,mo] = m.split('-');
+      return new Date(y, mo-1, 1).toLocaleDateString(undefined,{month:'short'});
+    });
+    const income = months.map(m => mt[m] ? mt[m].income : 0);
+    const expense = months.map(m => mt[m] ? mt[m].expense : 0);
+
+    const ctx = $('trendChart').getContext('2d');
+    if(trendChart) trendChart.destroy();
+    trendChart = new Chart(ctx, {
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          { label:'Income', data:income, backgroundColor:'#B7ECD7', borderColor:'#14A97C', borderWidth:1.5, borderRadius:6, maxBarThickness:26 },
+          { label:'Expenses', data:expense, backgroundColor:'#FFD3D3', borderColor:'#F04B4B', borderWidth:1.5, borderRadius:6, maxBarThickness:26 }
+        ]
+      },
+      options:{
+        maintainAspectRatio:false,
+        scales:{
+          y:{ beginAtZero:true, grid:{ color:'#E5E7EB' }, ticks:{ font:{family:'-apple-system, sans-serif'}, color:'#6B7280' } },
+          x:{ grid:{ display:false }, ticks:{ font:{family:'-apple-system, sans-serif'}, color:'#6B7280' } }
+        },
+        plugins:{
+          legend:{ position:'bottom', labels:{ boxWidth:10, font:{family:'-apple-system, sans-serif', size:12} } }
+        }
+      }
+    });
+  }
+
+  function txnIcon(t){
+    if(t.type==='income') return '↑';
+    if(t.type==='expense') return '↓';
+    return '↻';
+  }
+
+  function txnTableRowHTML(t){
+    const sign = t.type==='expense' ? '-' : '+';
+    const dateLabel = new Date(t.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'});
+    let categoryCell = '—';
+    let amountCell = `${sign}${fmtCur(t.amount, t.currency)}`;
+    if(t.type==='expense'){
+      const color = getCategoryColor(t.category||'Other');
+      categoryCell = `<span class="cat-badge" style="background:${color}40; color:${darken(color,70)}">${escapeHTML(t.category||'Other')}</span>`;
+    } else if(t.type==='borrowed'){
+      const paid = repaidTotal(t);
+      const remaining = remainingOwed(t);
+      categoryCell = 'from ' + escapeHTML(t.lender||'someone');
+      if(paid > 0){
+        if(remaining <= 0){
+          categoryCell += `<div class="repay-tag paid">Fully repaid</div>`;
+          amountCell = `<span style="text-decoration:line-through; color:var(--ink-muted); font-weight:500;">${fmtCur(t.amount, t.currency)}</span>`;
+        } else {
+          categoryCell += `<div class="repay-tag">${fmtCur(paid, t.currency)} repaid</div>`;
+          amountCell = `+${fmtCur(remaining, t.currency)} <span style="font-weight:500; color:var(--ink-muted); font-size:11.5px;">left</span>`;
+        }
+      }
+    } else {
+      categoryCell = 'Income';
+    }
+    return `
+      <tr class="txn-row" data-id="${t.id}">
+        <td>${dateLabel}</td>
+        <td class="desc-cell"><span class="txn-icon ${t.type}">${txnIcon(t)}</span>${escapeHTML(t.description)}${t.receiptId ? `<img class="txn-receipt" data-rid="${t.receiptId}" alt="Receipt" title="View receipt">` : ''}</td>
+        <td>${categoryCell}</td>
+        <td>${escapeHTML(t.payment || '—')}</td>
+        <td class="amt ${t.type}">${amountCell}</td>
+        <td class="actions-cell">
+          <button class="icon-btn edit-btn" title="Edit" aria-label="Edit">✎</button>
+          <button class="icon-btn delete-btn" title="Delete" aria-label="Delete">✕</button>
+        </td>
+      </tr>`;
+  }
+
+  function txnRowHTML(t){
+    const sign = t.type==='expense' ? '-' : '+';
+    const metaBits = [];
+    if(t.type==='expense') metaBits.push(t.category||'Other');
+    if(t.type==='borrowed'){
+      metaBits.push('from ' + (t.lender||'someone'));
+      const paid = repaidTotal(t);
+      if(paid>0) metaBits.push(remainingOwed(t)<=0 ? 'fully repaid' : fmtCur(paid, t.currency)+' repaid');
+    }
+    if(t.payment) metaBits.push(t.payment);
+    metaBits.push(new Date(t.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'}));
+    return `
+      <li class="txn-row" data-id="${t.id}">
+        <div class="txn-icon ${t.type}">${txnIcon(t)}</div>
+        <div class="txn-main">
+          <div class="desc">${escapeHTML(t.description)}${t.receiptId ? ` <img class="txn-receipt" data-rid="${t.receiptId}" alt="Receipt" title="View receipt" style="vertical-align:middle; margin-left:6px;">` : ''}</div>
+          <div class="meta">${metaBits.join(' · ')}</div>
+        </div>
+        <div class="txn-amt ${t.type}">${sign}${fmtCur(t.amount, t.currency)}</div>
+        <div class="txn-actions">
+          <button class="icon-btn edit-btn" title="Edit" aria-label="Edit">✎</button>
+          <button class="icon-btn delete-btn" title="Delete" aria-label="Delete">✕</button>
+        </div>
+      </li>`;
+  }
+
+  function escapeHTML(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function renderTransactionList(){
+    const typeF = $('filterType').value;
+    const catF = $('filterCategory').value;
+    const payF = $('filterPayment').value;
+    let list = [...wsTransactions()].sort((a,b)=> b.date.localeCompare(a.date));
+    if(typeF!=='all') list = list.filter(t=>t.type===typeF);
+    if(catF!=='all') list = list.filter(t=> t.type==='expense' && t.category===catF);
+    if(payF!=='all') list = list.filter(t=> t.payment===payF);
+
+    const container = $('txnList');
+    if(list.length===0){
+      container.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--ink-muted); padding:28px 0;">No transactions match this view.</td></tr>`;
+      return;
+    }
+    container.innerHTML = list.map(txnTableRowHTML).join('');
+    hydrateReceipts();
+  }
+
+  function renderCalendar(){
+    const y = calDate.getFullYear();
+    const m = calDate.getMonth();
+    $('calMonthLabel').textContent = calDate.toLocaleDateString(undefined,{month:'long', year:'numeric'});
+
+    // populate month/year selects if empty
+    if($('calMonthSelect').options.length===0){
+      const names = Array.from({length:12},(_,i)=> new Date(2000,i,1).toLocaleDateString(undefined,{month:'long'}));
+      $('calMonthSelect').innerHTML = names.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
+    }
+    if($('calYearSelect').options.length===0){
+      const thisYear = new Date().getFullYear();
+      let opts = '';
+      for(let yr=thisYear-4; yr<=thisYear+1; yr++){ opts += `<option value="${yr}">${yr}</option>`; }
+      $('calYearSelect').innerHTML = opts;
+    }
+    $('calMonthSelect').value = m;
+    $('calYearSelect').value = y;
+
+    const firstDow = new Date(y,m,1).getDay();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const byDay = {};
+    wsTransactions().forEach(t=>{
+      const dt = new Date(t.date+'T00:00:00');
+      if(dt.getFullYear()===y && dt.getMonth()===m){
+        const day = dt.getDate();
+        if(!byDay[day]) byDay[day] = [];
+        byDay[day].push(t);
+      }
+    });
+
+    const dowLabels = ['S','M','T','W','T','F','S'];
+    let html = dowLabels.map(l=>`<div class="cal-dow">${l}</div>`).join('');
+    for(let i=0;i<firstDow;i++) html += `<div class="cal-day empty"></div>`;
+
+    const todayStr = todayISO();
+    for(let day=1; day<=daysInMonth; day++){
+      const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const items = byDay[day] || [];
+      let net = 0;
+      items.forEach(t=>{
+        if(t.type==='income'||t.type==='borrowed') net += t.amount;
+        else net -= t.amount;
+      });
+      const netHTML = items.length ? `<div class="net ${net>=0?'pos':'neg'}">${net>=0?'+':'-'}${fmt(net)}</div>` : '';
+      html += `<div class="cal-day ${dateStr===todayStr?'today':''}" data-date="${dateStr}">
+                 <div class="cal-daynum">${day}</div>
+                 ${netHTML}
+               </div>`;
+    }
+    $('calGrid').innerHTML = html;
+  }
+
+  function renderSummary(){
+    const mt = monthlyTotals();
+    const keys = Object.keys(mt).sort().reverse();
+    if(keys.length===0){
+      $('summaryBody').innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--ink-muted);">No data yet</td></tr>`;
+      return;
+    }
+    $('summaryBody').innerHTML = keys.map(k=>{
+      const row = mt[k];
+      const net = row.income + row.borrowed - row.expense;
+      const label = new Date(k+'-01T00:00:00').toLocaleDateString(undefined,{month:'long', year:'numeric'});
+      return `<tr>
+        <td>${label}</td>
+        <td class="pos">${fmt(row.income)}</td>
+        <td class="neg">${fmt(row.expense)}</td>
+        <td>${fmt(row.borrowed)}</td>
+        <td class="${net>=0?'pos':'neg'}">${net>=0?'+':'-'}${fmt(net)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ---------- Settings: categories & payment methods ----------
+  function populateCategoryOptions(){
+    const opts = categories.map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+    const prevCat = $('categoryInput').value;
+    const prevFilter = $('filterCategory').value;
+    $('categoryInput').innerHTML = opts;
+    $('filterCategory').innerHTML = `<option value="all">All categories</option>` + opts;
+    if(categories.includes(prevCat)) $('categoryInput').value = prevCat;
+    if(prevFilter==='all' || categories.includes(prevFilter)) $('filterCategory').value = prevFilter;
+  }
+
+  function populatePaymentOptions(){
+    const opts = paymentMethods.map(p=>`<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join('');
+    const prevPay = $('paymentInput').value;
+    const prevFilter = $('filterPayment').value;
+    $('paymentInput').innerHTML = opts;
+    $('filterPayment').innerHTML = `<option value="all">All payment methods</option>` + opts;
+    if(paymentMethods.includes(prevPay)) $('paymentInput').value = prevPay;
+    if(prevFilter==='all' || paymentMethods.includes(prevFilter)) $('filterPayment').value = prevFilter;
+  }
+
+  function populateWorkspaceOptions(){
+    const opts = workspaces.map(w=>`<option value="${escapeHTML(w)}">${escapeHTML(w)}</option>`).join('');
+    $('workspaceInput').innerHTML = opts;
+  }
+
+  function populateCurrencyOptions(){
+    const formOpts = CURRENCIES.map(c=>`<option value="${c.code}">${c.code} (${c.symbol})</option>`).join('');
+    $('currencyInput').innerHTML = formOpts;
+    const settingsOpts = CURRENCIES.map(c=>`<option value="${c.code}">${escapeHTML(c.label)}</option>`).join('');
+    $('homeCurrencySelect').innerHTML = settingsOpts;
+    $('homeCurrencySelect').value = homeCurrency;
+  }
+
+  $('homeCurrencySelect').addEventListener('change', async (e)=>{
+    homeCurrency = e.target.value;
+    await saveHomeCurrency();
+    renderAll();
+  });
+
+  function renderWorkspaceTabs(){
+    $('workspaceTabs').innerHTML = workspaces.map(w=>
+      `<button type="button" class="ws-tab ${w===currentWorkspace?'active':''}" data-workspace="${escapeHTML(w)}">${escapeHTML(w)}</button>`
+    ).join('');
+  }
+
+  $('workspaceTabs').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('.ws-tab');
+    if(!btn) return;
+    currentWorkspace = btn.dataset.workspace;
+    await saveCurrentWorkspace();
+    renderAll();
+  });
+
+  function settingsRowHTML(name){
+    return `<li class="settings-row" data-name="${escapeHTML(name)}">
+      <input type="text" class="settings-input" value="${escapeHTML(name)}">
+      <button class="icon-btn save-item-btn" title="Save">✓</button>
+      <button class="icon-btn delete-item-btn" title="Delete">✕</button>
+    </li>`;
+  }
+
+  function renderCategorySettings(){
+    $('categorySettingsList').innerHTML = categories.map(settingsRowHTML).join('');
+  }
+  function renderPaymentSettings(){
+    $('paymentSettingsList').innerHTML = paymentMethods.map(settingsRowHTML).join('');
+  }
+  function renderWorkspaceSettings(){
+    $('workspaceSettingsList').innerHTML = workspaces.map(settingsRowHTML).join('');
+  }
+
+  async function renameCategory(oldName, newName){
+    const idx = categories.indexOf(oldName);
+    if(idx===-1) return;
+    if(categories.some((c,i)=> i!==idx && c.toLowerCase()===newName.toLowerCase())){
+      alert(`"${newName}" already exists.`); return;
+    }
+    categories[idx] = newName;
+    transactions.forEach(t=>{ if(t.type==='expense' && t.category===oldName) t.category = newName; });
+    await saveSettings();
+    await saveTransactions();
+    populateCategoryOptions();
+    renderAll();
+  }
+
+  async function renamePayment(oldName, newName){
+    const idx = paymentMethods.indexOf(oldName);
+    if(idx===-1) return;
+    if(paymentMethods.some((p,i)=> i!==idx && p.toLowerCase()===newName.toLowerCase())){
+      alert(`"${newName}" already exists.`); return;
+    }
+    paymentMethods[idx] = newName;
+    transactions.forEach(t=>{ if(t.payment===oldName) t.payment = newName; });
+    await saveSettings();
+    await saveTransactions();
+    populatePaymentOptions();
+    renderAll();
+  }
+
+  async function deleteCategory(name){
+    if(categories.length<=1){ alert('You need at least one category.'); return; }
+    if(!confirm(`Remove "${name}" from the category list? Past transactions keep their existing label.`)) return;
+    categories = categories.filter(c=>c!==name);
+    await saveSettings();
+    populateCategoryOptions();
+    renderAll();
+  }
+
+  async function deletePayment(name){
+    if(paymentMethods.length<=1){ alert('You need at least one payment method.'); return; }
+    if(!confirm(`Remove "${name}" from the payment method list? Past transactions keep their existing label.`)) return;
+    paymentMethods = paymentMethods.filter(p=>p!==name);
+    await saveSettings();
+    populatePaymentOptions();
+    renderAll();
+  }
+
+  async function renameWorkspace(oldName, newName){
+    const idx = workspaces.indexOf(oldName);
+    if(idx===-1) return;
+    if(workspaces.some((w,i)=> i!==idx && w.toLowerCase()===newName.toLowerCase())){
+      alert(`"${newName}" already exists.`); return;
+    }
+    workspaces[idx] = newName;
+    transactions.forEach(t=>{ if(t.workspace===oldName) t.workspace = newName; });
+    if(currentWorkspace===oldName){ currentWorkspace = newName; await saveCurrentWorkspace(); }
+    await saveSettings();
+    await saveTransactions();
+    populateWorkspaceOptions();
+    renderAll();
+  }
+
+  async function deleteWorkspace(name){
+    if(workspaces.length<=1){ alert('You need at least one workspace.'); return; }
+    if(!confirm(`Remove "${name}"? Past transactions keep their existing label but won't show up under any tab.`)) return;
+    workspaces = workspaces.filter(w=>w!==name);
+    if(currentWorkspace===name){ currentWorkspace = workspaces[0]; await saveCurrentWorkspace(); }
+    await saveSettings();
+    populateWorkspaceOptions();
+    renderAll();
+  }
+
+  $('categorySettingsList').addEventListener('click', async (e)=>{
+    const row = e.target.closest('.settings-row');
+    if(!row) return;
+    const oldName = row.dataset.name;
+    const input = row.querySelector('.settings-input');
+    if(e.target.classList.contains('save-item-btn')){
+      const newName = input.value.trim();
+      if(!newName || newName===oldName) return;
+      await renameCategory(oldName, newName);
+    } else if(e.target.classList.contains('delete-item-btn')){
+      await deleteCategory(oldName);
+    }
+  });
+
+  $('paymentSettingsList').addEventListener('click', async (e)=>{
+    const row = e.target.closest('.settings-row');
+    if(!row) return;
+    const oldName = row.dataset.name;
+    const input = row.querySelector('.settings-input');
+    if(e.target.classList.contains('save-item-btn')){
+      const newName = input.value.trim();
+      if(!newName || newName===oldName) return;
+      await renamePayment(oldName, newName);
+    } else if(e.target.classList.contains('delete-item-btn')){
+      await deletePayment(oldName);
+    }
+  });
+
+  $('addCategoryForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = $('newCategoryInput').value.trim();
+    if(!name) return;
+    if(categories.some(c=>c.toLowerCase()===name.toLowerCase())){ alert(`"${name}" already exists.`); return; }
+    categories.push(name);
+    await saveSettings();
+    populateCategoryOptions();
+    renderAll();
+    $('addCategoryForm').reset();
+  });
+
+  $('addPaymentForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = $('newPaymentInput').value.trim();
+    if(!name) return;
+    if(paymentMethods.some(p=>p.toLowerCase()===name.toLowerCase())){ alert(`"${name}" already exists.`); return; }
+    paymentMethods.push(name);
+    await saveSettings();
+    populatePaymentOptions();
+    renderAll();
+    $('addPaymentForm').reset();
+  });
+
+  $('workspaceSettingsList').addEventListener('click', async (e)=>{
+    const row = e.target.closest('.settings-row');
+    if(!row) return;
+    const oldName = row.dataset.name;
+    const input = row.querySelector('.settings-input');
+    if(e.target.classList.contains('save-item-btn')){
+      const newName = input.value.trim();
+      if(!newName || newName===oldName) return;
+      await renameWorkspace(oldName, newName);
+    } else if(e.target.classList.contains('delete-item-btn')){
+      await deleteWorkspace(oldName);
+    }
+  });
+
+  $('addWorkspaceForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = $('newWorkspaceInput').value.trim();
+    if(!name) return;
+    if(workspaces.some(w=>w.toLowerCase()===name.toLowerCase())){ alert(`"${name}" already exists.`); return; }
+    workspaces.push(name);
+    await saveSettings();
+    populateWorkspaceOptions();
+    renderAll();
+    $('addWorkspaceForm').reset();
+  });
+
+  // ---------- View switching ----------
+  function setView(name){
+    document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+    $('view-'+name).classList.remove('hidden');
+  }
+  $('viewSelect').addEventListener('change', e=> setView(e.target.value));
+
+  // ---------- Add/Edit modal ----------
+  function openModal(prefillDate){
+    $('txnForm').reset();
+    $('editId').value = '';
+    $('modalTitle').textContent = 'Add transaction';
+    $('dateInput').value = prefillDate || todayISO();
+    $('typeInput').value = 'expense';
+    $('workspaceInput').value = currentWorkspace;
+    $('currencyInput').value = homeCurrency;
+    resetReceiptState(null);
+    toggleTypeFields();
+    $('modalBackdrop').classList.add('open');
+    $('amountInput').focus();
+  }
+  function closeModal(){ $('modalBackdrop').classList.remove('open'); }
+
+  function toggleTypeFields(){
+    const type = $('typeInput').value;
+    const isEditing = !!$('editId').value;
+    $('categoryField').classList.toggle('hidden', type!=='expense');
+    $('lenderField').classList.toggle('hidden', type!=='borrowed');
+    $('categoryInput').required = (type==='expense');
+    $('lenderInput').required = (type==='borrowed');
+    $('repaymentSection').classList.toggle('hidden', !(type==='borrowed' && isEditing));
+  }
+  $('typeInput').addEventListener('change', toggleTypeFields);
+
+  function renderRepaymentsSection(t){
+    const paid = repaidTotal(t);
+    const remaining = remainingOwed(t);
+    const pct = t.amount>0 ? Math.min(100, Math.round(paid/t.amount*100)) : 0;
+    $('repaySummary').innerHTML = remaining<=0
+      ? `Fully repaid — ${fmtCur(paid, t.currency)} of ${fmtCur(t.amount, t.currency)}`
+      : `${fmtCur(paid, t.currency)} repaid of ${fmtCur(t.amount, t.currency)} · <span class="remaining">${fmtCur(remaining, t.currency)} remaining</span>`;
+    let barHtml = `<div class="repay-bar"><div class="repay-bar-fill" style="width:${pct}%"></div></div>`;
+    const list = (t.repayments||[]).slice().sort((a,b)=> b.date.localeCompare(a.date));
+    const listHtml = list.length
+      ? list.map(r=>`<li data-rid="${r.id}"><span>${new Date(r.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}</span><span style="font-weight:700; color:var(--teal-deep);">+${fmtCur(r.amount, t.currency)}</span><button type="button" class="icon-btn delete-repay-btn" title="Remove">✕</button></li>`).join('')
+      : `<li class="repay-empty" style="border:none;">No repayments logged yet.</li>`;
+    $('repaymentsList').innerHTML = barHtml + listHtml;
+  }
+
+  $('addRepaymentBtn').addEventListener('click', async ()=>{
+    const id = $('editId').value;
+    if(!id) return;
+    const t = transactions.find(x=>x.id===id);
+    if(!t) return;
+    const amount = parseFloat($('repayAmountInput').value);
+    const date = $('repayDateInput').value || todayISO();
+    if(!amount || amount<=0){ alert('Enter a repayment amount.'); return; }
+    if(!t.repayments) t.repayments = [];
+    t.repayments.push({ id: uid(), amount, date });
+    await saveTransactions();
+    renderRepaymentsSection(t);
+    renderAll();
+    $('repayAmountInput').value = '';
+  });
+
+  $('repaymentsList').addEventListener('click', async (e)=>{
+    if(!e.target.classList.contains('delete-repay-btn')) return;
+    e.preventDefault();
+    const id = $('editId').value;
+    const t = transactions.find(x=>x.id===id);
+    if(!t) return;
+    const li = e.target.closest('li');
+    const rid = li.dataset.rid;
+    t.repayments = (t.repayments||[]).filter(r=>r.id!==rid);
+    await saveTransactions();
+    renderRepaymentsSection(t);
+    renderAll();
+  });
+
+  $('openAddBtn').addEventListener('click', ()=> openModal());
+  $('cancelBtn').addEventListener('click', closeModal);
+  $('modalBackdrop').addEventListener('click', (e)=>{ if(e.target===$('modalBackdrop')) closeModal(); });
+
+  $('txnForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const id = $('editId').value;
+    const type = $('typeInput').value;
+    const amount = parseFloat($('amountInput').value);
+    const date = $('dateInput').value;
+    const description = $('descInput').value.trim();
+
+    const existingTx = id ? transactions.find(t=>t.id===id) : null;
+    const record = { id: id || uid(), type, amount, date, description, payment: $('paymentInput').value, workspace: $('workspaceInput').value, currency: $('currencyInput').value };
+
+    // receipt handling (photos live in IndexedDB; the transaction only keeps an id)
+    let receiptId = existingTx ? existingTx.receiptId : undefined;
+    try{
+      if(pendingReceipt){
+        const newId = 'r_' + uid();
+        await receiptPut(newId, pendingReceipt);
+        if(receiptId) await receiptDelete(receiptId);
+        receiptId = newId;
+      } else if(removeReceipt && receiptId){
+        await receiptDelete(receiptId);
+        receiptId = undefined;
+      }
+    }catch(err){
+      alert("Couldn't save the receipt photo in this browser, so the transaction was saved without it.");
+    }
+    if(receiptId) record.receiptId = receiptId;
+    if(type==='expense') record.category = $('categoryInput').value;
+    if(type==='borrowed'){
+      record.lender = $('lenderInput').value.trim() || 'Unknown';
+      const existing = id ? transactions.find(t=>t.id===id) : null;
+      record.repayments = existing && existing.repayments ? existing.repayments : [];
+    }
+
+    if(id){
+      const idx = transactions.findIndex(t=>t.id===id);
+      if(idx>-1) transactions[idx] = record;
+    } else {
+      transactions.push(record);
+    }
+    await saveTransactions();
+    renderAll();
+    closeModal();
+  });
+
+  // Edit / delete via delegation
+  document.addEventListener('click', async (e)=>{
+    const row = e.target.closest('.txn-row');
+    if(!row) return;
+    const id = row.dataset.id;
+    const t = transactions.find(x=>x.id===id);
+    if(!t) return;
+
+    if(e.target.classList.contains('delete-btn')){
+      if(t.receiptId){ receiptDelete(t.receiptId).catch(()=>{}); }
+      transactions = transactions.filter(x=>x.id!==id);
+      await saveTransactions();
+      renderAll();
+    } else if(e.target.classList.contains('edit-btn')){
+      $('editId').value = t.id;
+      $('modalTitle').textContent = 'Edit transaction';
+      $('workspaceInput').value = t.workspace || currentWorkspace;
+      $('typeInput').value = t.type;
+      $('amountInput').value = t.amount;
+      $('currencyInput').value = t.currency || homeCurrency;
+      $('dateInput').value = t.date;
+      $('descInput').value = t.description;
+      toggleTypeFields();
+      if(t.type==='expense') $('categoryInput').value = t.category || categories[0];
+      if(t.type==='borrowed'){
+        $('lenderInput').value = t.lender || '';
+        $('repayDateInput').value = todayISO();
+        renderRepaymentsSection(t);
+      }
+      $('paymentInput').value = t.payment || paymentMethods[0];
+      resetReceiptState(t.receiptId || null);
+      $('modalBackdrop').classList.add('open');
+    }
+  });
+
+
+  // ---------- Filters ----------
+  $('filterType').addEventListener('change', renderTransactionList);
+  $('filterCategory').addEventListener('change', renderTransactionList);
+  $('filterPayment').addEventListener('change', renderTransactionList);
+
+  // ---------- Calendar controls ----------
+  $('calMonthSelect').addEventListener('change', e=>{
+    calDate = new Date(calDate.getFullYear(), parseInt(e.target.value), 1);
+    renderCalendar();
+  });
+  $('calYearSelect').addEventListener('change', e=>{
+    calDate = new Date(parseInt(e.target.value), calDate.getMonth(), 1);
+    renderCalendar();
+  });
+
+  $('calGrid').addEventListener('click', (e)=>{
+    const cell = e.target.closest('.cal-day:not(.empty)');
+    if(!cell) return;
+    openDayModal(cell.dataset.date);
+  });
+
+  function openDayModal(dateStr){
+    dayModalTargetDate = dateStr;
+    const items = wsTransactions().filter(t=>t.date===dateStr).sort((a,b)=> a.description.localeCompare(b.description));
+    $('dayModalTitle').textContent = new Date(dateStr+'T00:00:00').toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
+    $('dayTxnList').innerHTML = items.length
+      ? items.map(txnRowHTML).join('')
+      : `<li class="empty-state"><span class="stamp">Empty</span><br>Nothing logged this day.</li>`;
+    $('dayModalBackdrop').classList.add('open');
+    hydrateReceipts();
+  }
+  $('dayCloseBtn').addEventListener('click', ()=> $('dayModalBackdrop').classList.remove('open'));
+  $('dayModalBackdrop').addEventListener('click', (e)=>{ if(e.target===$('dayModalBackdrop')) $('dayModalBackdrop').classList.remove('open'); });
+  $('dayAddBtn').addEventListener('click', ()=>{
+    $('dayModalBackdrop').classList.remove('open');
+    openModal(dayModalTargetDate);
+  });
+
+  // day modal also needs edit/delete delegation (shares .txn-row markup + document listener above)
+
+  // ---------- Receipts (stored in IndexedDB so there's plenty of room) ----------
+  let idbPromise = null;
+  function openReceiptDB(){
+    if(idbPromise) return idbPromise;
+    idbPromise = new Promise((resolve, reject)=>{
+      try{
+        const req = indexedDB.open('ledger-japan-receipts', 1);
+        req.onupgradeneeded = ()=>{ req.result.createObjectStore('receipts'); };
+        req.onsuccess = ()=> resolve(req.result);
+        req.onerror = ()=> { idbPromise = null; reject(req.error); };
+      }catch(e){ idbPromise = null; reject(e); }
+    });
+    return idbPromise;
+  }
+  async function idbRun(mode, fn){
+    const db = await openReceiptDB();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction('receipts', mode);
+      const store = tx.objectStore('receipts');
+      let result;
+      const req = fn(store);
+      if(req){ req.onsuccess = ()=>{ result = req.result; }; }
+      tx.oncomplete = ()=> resolve(result);
+      tx.onerror = ()=> reject(tx.error);
+      tx.onabort = ()=> reject(tx.error);
+    });
+  }
+  const receiptCache = new Map();
+  async function receiptPut(id, dataUrl){ await idbRun('readwrite', st=> st.put(dataUrl, id)); receiptCache.set(id, dataUrl); }
+  async function receiptGet(id){
+    if(receiptCache.has(id)) return receiptCache.get(id);
+    const v = await idbRun('readonly', st=> st.get(id));
+    if(v) receiptCache.set(id, v);
+    return v || null;
+  }
+  async function receiptDelete(id){ await idbRun('readwrite', st=> st.delete(id)); receiptCache.delete(id); }
+  async function receiptClear(){ await idbRun('readwrite', st=> st.clear()); receiptCache.clear(); }
+  async function receiptAll(){
+    const db = await openReceiptDB();
+    return new Promise((resolve, reject)=>{
+      const out = {};
+      const tx = db.transaction('receipts', 'readonly');
+      const req = tx.objectStore('receipts').openCursor();
+      req.onsuccess = ()=>{
+        const cur = req.result;
+        if(cur){ out[cur.key] = cur.value; cur.continue(); }
+      };
+      tx.oncomplete = ()=> resolve(out);
+      tx.onerror = ()=> reject(tx.error);
+    });
+  }
+
+  async function hydrateReceipts(){
+    const imgs = document.querySelectorAll('img.txn-receipt[data-rid]');
+    for(const img of imgs){
+      if(img.getAttribute('src')) continue;
+      try{
+        const url = await receiptGet(img.dataset.rid);
+        if(url) img.src = url; else img.remove();
+      }catch(e){ img.remove(); }
+    }
+  }
+
+  function compressImage(file, maxSide, quality){
+    return new Promise((resolve, reject)=>{
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = ()=>{
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+      img.src = url;
+    });
+  }
+
+  let pendingReceipt = null;     // newly chosen photo (data URL), not yet saved
+  let removeReceipt = false;     // user removed the existing photo
+  let editingReceiptId = null;   // receipt already attached to the transaction being edited
+
+  function updateReceiptUI(previewUrl){
+    const has = !!previewUrl;
+    $('receiptPreview').classList.toggle('hidden', !has);
+    if(has) $('receiptPreview').src = previewUrl; else $('receiptPreview').removeAttribute('src');
+    $('receiptRemoveBtn').classList.toggle('hidden', !has);
+    $('receiptPickLabel').textContent = has ? '📷 Replace photo' : '📷 Add photo';
+  }
+  async function resetReceiptState(existingId){
+    pendingReceipt = null;
+    removeReceipt = false;
+    editingReceiptId = existingId || null;
+    $('receiptFile').value = '';
+    updateReceiptUI(null);
+    if(existingId){
+      try{ updateReceiptUI(await receiptGet(existingId)); }catch(e){ /* preview unavailable */ }
+    }
+  }
+
+  $('receiptFile').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      pendingReceipt = await compressImage(file, 1280, 0.7);
+      removeReceipt = false;
+      updateReceiptUI(pendingReceipt);
+    }catch(err){
+      alert("That photo couldn't be read. Try a different image (JPEG or PNG works best).");
+    }
+    e.target.value = '';
+  });
+  $('receiptRemoveBtn').addEventListener('click', ()=>{
+    pendingReceipt = null;
+    if(editingReceiptId) removeReceipt = true;
+    updateReceiptUI(null);
+  });
+
+  function openLightbox(src){
+    $('lightboxImg').src = src;
+    $('lightbox').classList.add('open');
+  }
+  $('lightboxClose').addEventListener('click', ()=> $('lightbox').classList.remove('open'));
+  $('lightbox').addEventListener('click', (e)=>{ if(e.target===$('lightbox')) $('lightbox').classList.remove('open'); });
+  document.addEventListener('click', (e)=>{
+    const im = e.target.closest('img.txn-receipt, img.receipt-thumb');
+    if(im && im.getAttribute('src')) openLightbox(im.src);
+  });
+
+  // ---------- Backup & restore ----------
+  $('exportBtn').addEventListener('click', async ()=>{
+    const data = {
+      app:'ledger-japan', version:1, exportedAt:new Date().toISOString(),
+      categories, paymentMethods, workspaces, currentWorkspace, homeCurrency, transactions, receipts:{}
+    };
+    try{ data.receipts = await receiptAll(); }catch(e){ /* no receipts available */ }
+    const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ledger-japan-backup-' + todayISO() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=> URL.revokeObjectURL(a.href), 2000);
+  });
+
+  $('importFile').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    let data;
+    try{
+      data = JSON.parse(await file.text());
+      if(!data || data.app!=='ledger-japan' || !Array.isArray(data.transactions)) throw new Error('bad file');
+    }catch(err){
+      alert("That file doesn't look like a Ledger Japan backup.");
+      e.target.value = '';
+      return;
+    }
+    if(!confirm('Replace everything currently in this tracker with the contents of this backup? This cannot be undone.')){
+      e.target.value = '';
+      return;
+    }
+    categories = Array.isArray(data.categories) && data.categories.length ? data.categories : [...DEFAULT_CATEGORIES];
+    paymentMethods = Array.isArray(data.paymentMethods) && data.paymentMethods.length ? data.paymentMethods : [...DEFAULT_PAYMENT_METHODS];
+    workspaces = Array.isArray(data.workspaces) && data.workspaces.length ? data.workspaces : [...DEFAULT_WORKSPACES];
+    currentWorkspace = workspaces.includes(data.currentWorkspace) ? data.currentWorkspace : workspaces[0];
+    homeCurrency = CURRENCIES.some(c=>c.code===data.homeCurrency) ? data.homeCurrency : 'JPY';
+    transactions = data.transactions;
+    let receiptsRestored = true;
+    try{
+      await receiptClear();
+      for(const [rid, url] of Object.entries(data.receipts || {})){ await receiptPut(rid, url); }
+    }catch(err){ receiptsRestored = false; }
+    await saveSettings();
+    await saveCurrentWorkspace();
+    await saveHomeCurrency();
+    await saveTransactions();
+    populateCategoryOptions();
+    populatePaymentOptions();
+    populateWorkspaceOptions();
+    populateCurrencyOptions();
+    renderAll();
+    e.target.value = '';
+    alert(receiptsRestored ? 'Backup restored.' : 'Backup restored, but the receipt photos could not be saved in this browser.');
+  });
+
+  // ---------- Init ----------
+  $('todayLabel').textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
+
+  function checkStorageHealth(){
+    try{
+      const testKey = '__ledger_storage_test__';
+      localStorage.setItem(testKey, '1');
+      const ok = localStorage.getItem(testKey) === '1';
+      localStorage.removeItem(testKey);
+      return ok;
+    }catch(e){
+      return false;
+    }
+  }
+
+  async function init(){
+    if(!checkStorageHealth()){
+      $('storageWarning').classList.remove('hidden');
+    }
+    await loadSettings();
+    await loadTransactions();
+    populateCategoryOptions();
+    populatePaymentOptions();
+    populateWorkspaceOptions();
+    populateCurrencyOptions();
+    renderAll();
+  }
+  init();
+
+})();
+</script>
+</body>
+</html>
